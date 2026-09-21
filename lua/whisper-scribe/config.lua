@@ -3,7 +3,6 @@ local M = {}
 local defaults = {
   audio_device_index = nil, -- required: find via `ffmpeg -f avfoundation -list_devices true -i ""`
   model_path = nil, -- required: path to a ggml whisper.cpp model file
-  max_line_width = 72,
   language = "en",
   ffmpeg_path = "ffmpeg", -- override if not on $PATH, e.g. a setup.sh-managed install
   whisper_cli_path = "whisper-cli", -- override if not on $PATH, e.g. a setup.sh-managed install

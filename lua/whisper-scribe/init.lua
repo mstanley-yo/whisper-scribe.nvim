@@ -110,17 +110,12 @@ local function start_transcription()
       return
     end
 
-    local lines = format.format_transcript(text, opts.max_line_width)
-
     if vim.api.nvim_buf_is_valid(bufnr) then
       local last = vim.api.nvim_buf_line_count(bufnr)
-      vim.api.nvim_buf_set_lines(bufnr, last, last, false, lines)
-      notify(("transcript inserted (%d line%s)."):format(#lines, #lines == 1 and "" or "s"))
+      vim.api.nvim_buf_set_lines(bufnr, last, last, false, { text })
+      notify("transcript inserted.")
     else
-      notify(
-        "target buffer no longer valid; transcript discarded:\n" .. table.concat(lines, "\n"),
-        vim.log.levels.WARN
-      )
+      notify("target buffer no longer valid; transcript discarded:\n" .. text, vim.log.levels.WARN)
     end
 
     os.remove(path_for_cleanup)

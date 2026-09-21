@@ -70,7 +70,6 @@ or any other notifier, it just cooperates with whatever `vim.notify` you have.
 | `model_path` | string | - | yes |
 | `whisper_cli_path` | string | `"whisper-cli"` | no (set by `setup.sh`'s example above) |
 | `ffmpeg_path` | string | `"ffmpeg"` | no |
-| `max_line_width` | number | `72` | no |
 | `language` | string | `"en"` | no |
 | `status_ticker` | boolean | `true` | no |
 
