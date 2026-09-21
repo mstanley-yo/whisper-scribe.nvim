@@ -14,7 +14,8 @@ content):
 return {
   "mstanley-yo/whisper-scribe.nvim",
   keys = {
-    { "<leader>W", "<cmd>WhisperScribe<cr>", desc = "Toggle voice dictation" },
+    { "<leader>dw", "<cmd>WhisperScribe<cr>", desc = "Toggle voice dictation" },
+    { "<leader>dc", "<cmd>WhisperScribeCancel<cr>", desc = "Cancel voice dictation" },
   },
   opts = {
     audio_device_index = 0, -- you'll set this for real in step 3
@@ -39,17 +40,21 @@ Near the end it prints a list of your computer's microphones, each with a
 number, e.g. `[0] MacBook Pro Microphone`. Take that number and put it in
 `audio_device_index` in the config from step 1, then save the file.
 
-**4. Restart Neovim once more.** You're done — press `<leader>W` to try it.
+**4. Restart Neovim once more.** You're done — press `<leader>dw` to try it.
 
 ## Usage
 
-- Press `<leader>W` → a notification confirms recording has started.
+- Press `<leader>dw` → a notification confirms recording has started.
 - Speak. A notification keeps ticking with the elapsed time
   ("recording... 0:07") so you can tell it's still going.
-- Press `<leader>W` again → the notification switches to "transcribing...",
+- Press `<leader>dw` again → the notification switches to "transcribing...",
   still ticking.
 - A few seconds later, the transcript appears at the end of your buffer, and
   the notification reports how many lines were inserted.
+- Changed your mind, or triggered it by accident? Press `<leader>dc` at any
+  point during recording or transcribing to cancel — the recording is
+  discarded and nothing is inserted. Pressing it while idle just says
+  "nothing to cancel."
 
 If your notification plugin supports updating a message in place (e.g.
 [snacks.nvim](https://github.com/folke/snacks.nvim)'s notifier), that whole
@@ -162,3 +167,9 @@ Manual end-to-end checklist:
     turn with no errors.
 11. Set `opts.status_ticker = false` → confirm the periodic messages stop
     but the start/stop/result notifications still fire normally.
+12. `<leader>dw` to start, then `<leader>dc` mid-recording → "canceling..."
+    then "recording canceled", back to idle, nothing inserted.
+13. `<leader>dw` to start, speak, `<leader>dw` to stop, then `<leader>dc`
+    while it's transcribing → "transcription canceled" (not reported as a
+    failure), back to idle, nothing inserted.
+14. `<leader>dc` while idle → "nothing to cancel.", no errors.

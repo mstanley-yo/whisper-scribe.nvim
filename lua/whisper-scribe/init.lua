@@ -13,6 +13,7 @@ local state = STATE_IDLE
 local bufnr = nil
 local wav_path = nil
 local stop_requested = false
+local cancel_requested = false
 local state_started_at = nil
 local status_timer = nil
 
@@ -69,6 +70,7 @@ local function reset()
   bufnr = nil
   wav_path = nil
   stop_requested = false
+  cancel_requested = false
   state_started_at = nil
   stop_ticker()
 end
@@ -82,6 +84,13 @@ local function start_transcription()
 
   transcribe.run(wav_path, opts.model_path, opts.language, opts.whisper_cli_path, function(obj)
     local path_for_cleanup = wav_path
+
+    if cancel_requested then
+      os.remove(path_for_cleanup)
+      notify("transcription canceled.")
+      reset()
+      return
+    end
 
     if obj.code ~= 0 then
       notify(
@@ -120,6 +129,15 @@ local function start_transcription()
 end
 
 local function on_ffmpeg_exit(obj)
+  if cancel_requested then
+    if wav_path then
+      os.remove(wav_path)
+    end
+    notify("recording canceled.")
+    reset()
+    return
+  end
+
   if not stop_requested then
     -- ffmpeg died on its own while we were still recording (bad device
     -- index, permission denial, etc.) - this is a real failure.
@@ -183,6 +201,24 @@ function M.toggle()
     stop_recording()
   else
     notify("still transcribing previous recording, please wait.", vim.log.levels.WARN)
+  end
+end
+
+--- Abort whatever is currently happening (recording or transcribing) and
+--- discard it - no text is inserted. No-ops with a notice if already idle.
+function M.cancel()
+  if state == STATE_IDLE then
+    notify("nothing to cancel.")
+    return
+  end
+
+  cancel_requested = true
+  notify("canceling...")
+
+  if state == STATE_RECORDING then
+    recorder.stop()
+  else
+    transcribe.cancel()
   end
 end
 
