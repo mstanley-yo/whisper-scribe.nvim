@@ -13,9 +13,55 @@ local state = STATE_IDLE
 local bufnr = nil
 local wav_path = nil
 local stop_requested = false
+local state_started_at = nil
+local status_timer = nil
 
+-- Every notification shares one id. Backends that support replacing a
+-- notification in place by id (e.g. snacks.nvim's notifier, which works by
+-- globally replacing vim.notify) will collapse a whole recording ->
+-- transcribing -> done lifecycle into one evolving message. Plain built-in
+-- vim.notify ignores the unrecognized opts.id field and just echoes each
+-- call as it already does today - no special-casing needed either way.
 local function notify(msg, level)
-  vim.notify("[whisper-scribe] " .. msg, level or vim.log.levels.INFO)
+  vim.notify("[whisper-scribe] " .. msg, level or vim.log.levels.INFO, { id = "whisper-scribe-status" })
+end
+
+local function mark_state_started()
+  state_started_at = os.time()
+end
+
+local function tick()
+  if state == STATE_IDLE then
+    return
+  end
+  local opts = config.get()
+  if not opts or not opts.status_ticker then
+    return
+  end
+  local elapsed = format.format_duration(os.time() - state_started_at)
+  if state == STATE_RECORDING then
+    notify(("recording... %s"):format(elapsed))
+  elseif state == STATE_TRANSCRIBING then
+    notify(("transcribing... %s"):format(elapsed))
+  end
+  vim.cmd("redrawstatus")
+end
+
+local function start_ticker(opts)
+  if not opts.status_ticker or status_timer then
+    return
+  end
+  status_timer = vim.uv.new_timer()
+  status_timer:start(1000, 1000, vim.schedule_wrap(tick))
+end
+
+local function stop_ticker()
+  if not status_timer then
+    return
+  end
+  status_timer:stop()
+  status_timer:close()
+  status_timer = nil
 end
 
 local function reset()
@@ -23,6 +69,8 @@ local function reset()
   bufnr = nil
   wav_path = nil
   stop_requested = false
+  state_started_at = nil
+  stop_ticker()
 end
 
 local function start_transcription()
@@ -93,6 +141,7 @@ local function on_ffmpeg_exit(obj)
   end
 
   state = STATE_TRANSCRIBING
+  mark_state_started()
   start_transcription()
 end
 
@@ -108,6 +157,8 @@ local function start_recording()
 
   recorder.start(wav_path, opts.audio_device_index, opts.ffmpeg_path, on_ffmpeg_exit)
   state = STATE_RECORDING
+  mark_state_started()
+  start_ticker(opts)
   notify("recording started")
 end
 
@@ -138,6 +189,14 @@ end
 --- Returns "idle" | "recording" | "transcribing".
 function M.status()
   return state
+end
+
+--- Returns seconds elapsed in the current state, or nil if idle.
+function M.elapsed()
+  if state == STATE_IDLE or not state_started_at then
+    return nil
+  end
+  return os.time() - state_started_at
 end
 
 return M

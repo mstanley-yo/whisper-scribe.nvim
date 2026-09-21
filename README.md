@@ -44,9 +44,18 @@ number, e.g. `[0] MacBook Pro Microphone`. Take that number and put it in
 ## Usage
 
 - Press `<leader>W` → a notification confirms recording has started.
-- Speak.
-- Press `<leader>W` again → a notification confirms it's transcribing.
-- A few seconds later, the transcript appears at the end of your buffer.
+- Speak. A notification keeps ticking with the elapsed time
+  ("recording... 0:07") so you can tell it's still going.
+- Press `<leader>W` again → the notification switches to "transcribing...",
+  still ticking.
+- A few seconds later, the transcript appears at the end of your buffer, and
+  the notification reports how many lines were inserted.
+
+If your notification plugin supports updating a message in place (e.g.
+[snacks.nvim](https://github.com/folke/snacks.nvim)'s notifier), that whole
+sequence appears as one message that evolves over time rather than a pile of
+separate popups — no extra setup needed, the plugin doesn't depend on snacks
+or any other notifier, it just cooperates with whatever `vim.notify` you have.
 
 ## Configuration
 
@@ -58,9 +67,33 @@ number, e.g. `[0] MacBook Pro Microphone`. Take that number and put it in
 | `ffmpeg_path` | string | `"ffmpeg"` | no |
 | `max_line_width` | number | `72` | no |
 | `language` | string | `"en"` | no |
+| `status_ticker` | boolean | `true` | no |
 
 `audio_device_index` and `model_path` produce a clear error on startup if
-missing or invalid.
+missing or invalid. Set `status_ticker = false` to turn off the
+periodic "recording/transcribing... elapsed time" notifications and only get
+the start/stop/result messages.
+
+### Statusline
+
+`require("whisper-scribe").status()` returns `"idle"`, `"recording"`, or
+`"transcribing"`; `require("whisper-scribe").elapsed()` returns seconds in
+the current state (or `nil` when idle). Example lualine component:
+
+```lua
+{
+  function()
+    local ws = require("whisper-scribe")
+    local elapsed = ws.elapsed()
+    if not elapsed then
+      return ""
+    end
+    local mins, secs = math.floor(elapsed / 60), elapsed % 60
+    local icon = ws.status() == "recording" and "🎙" or "…"
+    return ("%s %d:%02d"):format(icon, mins, secs)
+  end,
+}
+```
 
 ## Health check
 
@@ -122,3 +155,10 @@ Manual end-to-end checklist:
    ffmpeg-failed error, resets to idle. Set `model_path` to a nonexistent
    file → hard error at `setup()`. Record ~1s of silence → "no text"
    warning, nothing inserted.
+10. Confirm the ticking notifications appear roughly once per second while
+    recording and while transcribing, and that with a replace-capable
+    notifier (e.g. snacks.nvim) they update one message in place rather than
+    stacking; with plain built-in `vim.notify` they should just echo in
+    turn with no errors.
+11. Set `opts.status_ticker = false` → confirm the periodic messages stop
+    but the start/stop/result notifications still fire normally.

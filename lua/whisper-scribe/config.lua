@@ -7,6 +7,7 @@ local defaults = {
   language = "en",
   ffmpeg_path = "ffmpeg", -- override if not on $PATH, e.g. a setup.sh-managed install
   whisper_cli_path = "whisper-cli", -- override if not on $PATH, e.g. a setup.sh-managed install
+  status_ticker = true, -- periodic "Recording... 0:07" notify while recording/transcribing
 }
 
 local opts = nil

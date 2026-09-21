@@ -114,6 +114,14 @@ function M.wrap_sentence(sentence, max_width)
   return lines
 end
 
+--- Format a whole-second duration as "m:ss", e.g. 7 -> "0:07", 63 -> "1:03".
+function M.format_duration(seconds)
+  seconds = math.max(0, math.floor(seconds))
+  local minutes = math.floor(seconds / 60)
+  local secs = seconds % 60
+  return ("%d:%02d"):format(minutes, secs)
+end
+
 --- Format a raw transcript into an array of lines: one sentence per line,
 --- wrapped so no line exceeds max_width unless a single token already did.
 function M.format_transcript(text, max_width)
