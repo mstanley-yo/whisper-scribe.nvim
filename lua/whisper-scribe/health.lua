@@ -5,20 +5,25 @@ function M.check()
 
   health.start("whisper-scribe.nvim")
 
-  if vim.fn.executable("ffmpeg") == 1 then
-    health.ok("ffmpeg found on $PATH")
-  else
-    health.error("ffmpeg not found on $PATH (brew install ffmpeg)")
-  end
-
-  if vim.fn.executable("whisper-cli") == 1 then
-    health.ok("whisper-cli found on $PATH")
-  else
-    health.error("whisper-cli not found on $PATH (brew install whisper-cpp)")
-  end
-
   local ok, config = pcall(require, "whisper-scribe.config")
   local opts = ok and config.get() or nil
+
+  local ffmpeg_path = (opts and opts.ffmpeg_path) or "ffmpeg"
+  local whisper_cli_path = (opts and opts.whisper_cli_path) or "whisper-cli"
+
+  if vim.fn.executable(ffmpeg_path) == 1 then
+    health.ok(("ffmpeg found: %s"):format(ffmpeg_path))
+  else
+    health.error(("ffmpeg not found/executable: %s (see setup.sh, or brew install ffmpeg)"):format(ffmpeg_path))
+  end
+
+  if vim.fn.executable(whisper_cli_path) == 1 then
+    health.ok(("whisper-cli found: %s"):format(whisper_cli_path))
+  else
+    health.error(
+      ("whisper-cli not found/executable: %s (see setup.sh, or brew install whisper-cpp)"):format(whisper_cli_path)
+    )
+  end
 
   if not opts then
     health.error("setup() has not been called (or failed) - see README for required options")

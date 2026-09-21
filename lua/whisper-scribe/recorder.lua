@@ -6,9 +6,9 @@ local job = nil
 --- Start recording mic audio (mono, 16kHz - what whisper.cpp expects) to
 --- wav_path via ffmpeg's avfoundation input. on_exit is called via
 --- vim.schedule, so it may safely call vim.api.*/vim.notify.
-function M.start(wav_path, device_index, on_exit)
+function M.start(wav_path, device_index, ffmpeg_path, on_exit)
   local cmd = {
-    "ffmpeg",
+    ffmpeg_path,
     "-y",
     "-f",
     "avfoundation",

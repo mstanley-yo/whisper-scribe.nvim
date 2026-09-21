@@ -5,6 +5,8 @@ local defaults = {
   model_path = nil, -- required: path to a ggml whisper.cpp model file
   max_line_width = 72,
   language = "en",
+  ffmpeg_path = "ffmpeg", -- override if not on $PATH, e.g. a setup.sh-managed install
+  whisper_cli_path = "whisper-cli", -- override if not on $PATH, e.g. a setup.sh-managed install
 }
 
 local opts = nil
@@ -33,6 +35,12 @@ function M.setup(user_opts)
     ))
   end
   merged.model_path = expanded_model_path
+
+  -- vim.system() execs these directly with no shell, so a literal "~" would
+  -- not be expanded and would fail - expand here regardless of whether the
+  -- user configured a bare command name (e.g. "ffmpeg") or an absolute path.
+  merged.ffmpeg_path = vim.fn.expand(merged.ffmpeg_path)
+  merged.whisper_cli_path = vim.fn.expand(merged.whisper_cli_path)
 
   opts = merged
 end

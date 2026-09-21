@@ -32,7 +32,7 @@ local function start_transcription()
     return
   end
 
-  transcribe.run(wav_path, opts.model_path, opts.language, function(obj)
+  transcribe.run(wav_path, opts.model_path, opts.language, opts.whisper_cli_path, function(obj)
     local path_for_cleanup = wav_path
 
     if obj.code ~= 0 then
@@ -106,7 +106,7 @@ local function start_recording()
   wav_path = vim.fn.tempname() .. ".wav"
   stop_requested = false
 
-  recorder.start(wav_path, opts.audio_device_index, on_ffmpeg_exit)
+  recorder.start(wav_path, opts.audio_device_index, opts.ffmpeg_path, on_ffmpeg_exit)
   state = STATE_RECORDING
   notify("recording started")
 end

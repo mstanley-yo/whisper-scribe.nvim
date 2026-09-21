@@ -17,42 +17,52 @@ on any arch.
 ## Prerequisites
 
 ```sh
-brew install ffmpeg whisper-cpp
+./setup.sh
 ```
 
-Download a model (this is a one-off manual step, not automated by the
-plugin - pick whichever size you like from
-[ggerganov/whisper.cpp on Hugging Face](https://huggingface.co/ggerganov/whisper.cpp)):
+This installs/repairs `ffmpeg` via Homebrew (self-healing: if `ffmpeg` is
+already installed but broken - e.g. a Homebrew shared-library version skew
+where a dependency like `x265` got upgraded out from under it - it detects
+that and runs `brew reinstall ffmpeg`), builds `whisper-cli` from a **pinned**
+whisper.cpp git tag (currently `v1.9.4`, see the variables at the top of
+`setup.sh`) so the exact binary is reproducible rather than "whatever
+Homebrew's rolling formula currently has", and downloads+checksum-verifies a
+pinned model file. It's idempotent - safe to re-run any time (e.g. after a
+`brew upgrade` breaks `ffmpeg` again).
 
-```sh
-mkdir -p ~/.local/share/nvim/whisper-scribe/models
-curl -L https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin \
-  -o ~/.local/share/nvim/whisper-scribe/models/ggml-base.en.bin
-```
+Why not just `brew install ffmpeg whisper-cpp`? Homebrew doesn't support real
+version pinning: `brew pin` only protects the named formula from `brew
+upgrade`, not its dependencies, so a dependency like `x265` can still move
+out from under `ffmpeg` and break it (this happened in practice - `brew
+reinstall ffmpeg` is Homebrew's own documented fix, which is what `setup.sh`
+automates). `whisper-cli` has no prebuilt binaries published anywhere for any
+platform, so it's built from source at a pinned tag instead - genuinely
+reproducible, since the build has no Homebrew dependencies beyond `cmake`
+itself, and Metal acceleration is on by default on Apple Silicon.
 
-`base.en` is a good speed/accuracy balance on Apple Silicon. `tiny.en` is
-faster but less accurate; `small.en` is slower but more accurate.
+At the end, `setup.sh` prints a ready-to-paste lazy.nvim `opts` snippet with
+the resolved paths, plus your `avfoundation` device list so you can read off
+your `audio_device_index` (machine/mic-specific, can't be pinned or guessed).
 
-Find your microphone's `avfoundation` device index (it's machine-specific,
-and can shift if you plug in a different mic):
-
-```sh
-ffmpeg -f avfoundation -list_devices true -i ""
-```
-
-Look under "AVFoundation audio devices" for the index of your mic.
+If you'd rather do it by hand: `brew install ffmpeg cmake`, then
+`git clone https://github.com/ggml-org/whisper.cpp && cd whisper.cpp && git checkout v1.9.4 && cmake -B build && cmake --build build -j --config Release`,
+then download a model from
+[ggerganov/whisper.cpp on Hugging Face](https://huggingface.co/ggerganov/whisper.cpp)
+(`base.en` is a good speed/accuracy balance on Apple Silicon; `tiny.en` is
+faster but less accurate, `small.en` is slower but more accurate).
 
 ## Install (lazy.nvim)
 
 ```lua
 {
-  "your-github-username/whisper-scribe.nvim",
+  "mstanley-yo/whisper-scribe.nvim",
   keys = {
     { "<leader>W", "<cmd>WhisperScribe<cr>", desc = "Toggle voice dictation" },
   },
   opts = {
     audio_device_index = 0, -- from `ffmpeg -f avfoundation -list_devices true -i ""`
-    model_path = "~/.local/share/nvim/whisper-scribe/models/ggml-base.en.bin",
+    model_path = "~/.local/share/whisper-scribe/models/ggml-base.en.bin",
+    whisper_cli_path = "~/.local/share/whisper-scribe/bin/whisper-cli", -- setup.sh installs here, not on $PATH
   },
 }
 ```

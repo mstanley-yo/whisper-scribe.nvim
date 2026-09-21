@@ -5,9 +5,9 @@ local M = {}
 --- through vim.schedule, so it may safely call vim.api.*/vim.notify).
 --- obj.stdout is the clean transcript text (-np -nt: no extra logging, no
 --- timestamps, nothing else written to stdout).
-function M.run(wav_path, model_path, language, on_exit)
+function M.run(wav_path, model_path, language, whisper_cli_path, on_exit)
   local cmd = {
-    "whisper-cli",
+    whisper_cli_path,
     "-m",
     model_path,
     "-f",
