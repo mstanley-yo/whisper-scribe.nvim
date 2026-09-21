@@ -2,7 +2,7 @@
 
 Local, offline push-to-toggle dictation for Neovim. Press a key to start
 recording your microphone, press it again to stop - the transcript is
-appended to the end of the current buffer, one sentence per line. macOS only.
+appended to the end of the current buffer. macOS only.
 
 ## Installation
 
